@@ -1,3 +1,33 @@
 body {
   background-color: #43394e;
+  overflow-x: hidden;
+}
+.navBar {
+  top: 0;
+  width: 100vw;
+  z-index: 1;
+  height: 60px !important;
+}
+.navMenu {
+  margin-top: 59px;
+}
+.closed {
+  transition: height 300ms ease;
+  height: 0px;
+}
+.open {
+  transition: height 300ms ease;
+  height: 600px;
+}
+
+.font-30 {
+  font-size: 30px;
+}
+
+.forecastList {
+  padding: 25px;
+}
+.navFooter {
+  width: 100vw;
+  font-size: x-small;
 }
