@@ -86,6 +86,9 @@ function storePreviousSearch(card, isSearchHistory){
     searchButton.textContent = 'Search again';
     
     card.appendChild(searchButton);
+    if($('.searchHistory .card[data-string="' + locationString + '"]').length > 0) {
+        $('.searchHistory .card[data-string="' + locationString + '"]').remove();
+    }
 
     $('.searchHistory').prepend(card);
     if ($('.searchHistory').children().length > 5) $('.searchHistory .card:last-child').remove();
@@ -185,12 +188,14 @@ function addCard(element, isDaily, isSearchHistory){
     const weatherText = document.createElement('span');
     weatherIcon.setAttribute('src', 'https://img.icons8.com/material-two-tone/24/000000/partly-cloudy-day--v1.png');
     weatherText.textContent = element.weather;
+    weatherText.className += 'ml-2'
 
     const tempP = document.createElement('p');
     const tempIcon = document.createElement('img');
     const tempText = document.createElement('span');
     tempIcon.setAttribute('src', 'https://img.icons8.com/material-two-tone/24/000000/thermometer.png');
     tempText.textContent = element.temp + 'ºF';
+    tempText.className += 'ml-2'
 
     const windP = document.createElement('p');
     const windIcon = document.createElement('img');
@@ -198,19 +203,22 @@ function addCard(element, isDaily, isSearchHistory){
     const windString = element.wind.speed + ' Mph ' + directionFromDegrees(element.wind.deg) ;
     windIcon.setAttribute('src', 'https://img.icons8.com/material-two-tone/24/000000/wind-gauge.png');
     windText.textContent = windString;
+    windText.className += 'ml-2'
 
     const humidityP = document.createElement('p');
     const humidityIcon = document.createElement('img');
     const humidityText = document.createElement('span');
     humidityIcon.setAttribute('src', 'https://img.icons8.com/material-two-tone/24/000000/humidity.png');
-    humidityText.textContent = element.humidity;
+    humidityText.textContent = element.humidity + '%';
+    humidityText.className += 'ml-2'
 
     const uvP = document.createElement('p');
     const uvIcon = document.createElement('img');
     const uvText = document.createElement('span');
     uvIcon.setAttribute('src', 'https://img.icons8.com/external-justicon-lineal-justicon/64/000000/external-uv-index-weather-justicon-lineal-justicon-1.png');
     uvIcon.setAttribute('style', 'width: 24px; height: 24px');
-    uvText.textContent = element.uv;
+    uvText.textContent = 'UVI: ' + element.uv;
+    uvText.className += 'ml-2'
 
     weatherP.appendChild(weatherIcon);
     weatherP.appendChild(weatherText);
