@@ -372,7 +372,6 @@ function loadStored(){
 }
 
 $(document).ready(()=>{
-    //$('.menu').click(toggleMenuState);
     $('#searchMain').click(autoSearch);
     $('#searchCity').on('keyup', citySearchInput);
     $('#searchCity').on('blur', ()=> { setTimeout(() => { $('.searchTermBox').html(''); }, 500) });
