@@ -8,25 +8,26 @@ let locationString = '';
 let fetchData;
 let charactersEntered = 0;
 let time;
+let anim;
 
-const toggleMenuState = () => {
-    const navMenu = $('.navMenu');
-    (navMenu.attr('class').includes('closed')) ? 
-        navMenu.addClass('open').removeClass('closed') :
-        navMenu.removeClass('open').addClass('closed');
-    const menuButtons = $('.menu');
-    for(let i = 0; i < menuButtons.length; i++) {
-        const element = $(menuButtons[i]);
-        (element.attr('class').includes('menuOpen')) ?
-            element.removeClass('menuOpen d-block').addClass('menuClosed d-none') :
-            element.addClass('menuOpen d-block').removeClass('menuClosed d-none');
-    };
+const showError = (errorMessage) => {
+    const errorPanel = $('.alert-danger');
+    errorPanel.text(errorMessage);
+    errorPanel.animate({
+        opacity: 1
+    }, 300);
+    anim = setTimeout(()=>{
+        const errorPanel = $('.alert-danger');
+        errorPanel.animate({
+            opacity: 0
+        }, 300);
+    }, 3000)
     
 }
 
 function directionFromDegrees (degrees)  {
     degrees = Number.parseFloat(degrees);
-    console.log(degrees);
+    //console.log(degrees);
     if (degrees >= 0 && degrees <= 20) return 'N';
     if (degrees > 20 && degrees <= 70) return 'NE';
     if (degrees > 70 && degrees <= 110) return 'E';
@@ -49,7 +50,7 @@ function geoApi_GetLocation(location, isSearchHistory) {
     temp = ((temp != null && temp != '') ? temp : ((location.length > 0) ? location : 'ALL BAD'))
     
     //console.log(`(temp != null && temp != '') ? temp : (location.length > 0 ? location : ''): `, ((temp != null && temp != '') ? temp : ((location.length > 0) ? location : 'ALL BAD')) );
-    console.log('temp', temp);
+    //console.log('temp', temp);
     
     locationString = (temp.length > 0 ? temp : '');
     //console.log(locationString);
@@ -59,21 +60,26 @@ function geoApi_GetLocation(location, isSearchHistory) {
         const request = new Request(requestUrl, {
             method: 'GET',
         });
-        fetch(request)
-        .then(response => {
-            response.json()
-                .then((data)=>{
-                    console.log(data);
-                    if(data.length > 0){
-                        fetchData =  {
-                            name: data[0].name, 
-                            lat: data[0].lat,
-                            lon: data[0].lon
-                        };
-                        oneCall_GetWeather(fetchData, isSearchHistory);
-                    } else return;
-                });
-        });
+        try{
+            fetch(request)
+            .then(response => {
+                response.json()
+                    .then((data)=>{
+                        //console.log(data);
+                        if(data.length > 0){
+                            fetchData =  {
+                                name: data[0].name, 
+                                lat: data[0].lat,
+                                lon: data[0].lon
+                            };
+                            oneCall_GetWeather(fetchData, isSearchHistory);
+                        } else return;
+                    });
+            });
+        } catch (err){
+            showError(err)
+        }
+        
     } else console.log('Problem!: (locationString.length > 0 ): ', (locationString.length > 0 ));
 }
 
@@ -105,7 +111,7 @@ function storePreviousSearch(card, isSearchHistory){
 }
 
 function oneCall_GetWeather(locationData, isSearchHistory) {
-    console.log(locationData);
+    //console.log(locationData);
     charactersEntered = 0;
     const lat = locationData.lat;
     const lon = locationData.lon;
@@ -290,9 +296,9 @@ function autoFill(){
                     }
                 );
             } else {
-                console.log('Problem!');
-                console.log('response.status', response.status);
-                console.log('response.statusText', response.statusText);
+                //console.log('Problem!');
+                //console.log('response.status', response.status);
+                //console.log('response.statusText', response.statusText);
             }
         });
     }
@@ -335,7 +341,7 @@ function autoSearch(event) {
 
 function loadStored(){
     storageObj = JSON.parse(localStorage.getItem('pastSearches'));
-    console.log(storageObj);
+    //console.log(storageObj);
     if (storageObj != null) {
         for (let i = 0; i < storageObj.length; i++) {
             const element = storageObj[i];
