@@ -1,5 +1,5 @@
 const openWeatherAPIKey = '3248b4129513a60a8f4f5b72799aec86';
-const geoApiUrl = 'http://api.openweathermap.org/geo/1.0/direct?q=';
+const geoApiUrl = 'https://api.openweathermap.org/geo/1.0/direct?q=';
 const oneCallApiUrl = 'https://api.openweathermap.org/data/2.5/onecall?';
 const units = 'imperial';
 const geoResultLimit = 5;
