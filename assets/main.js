@@ -259,33 +259,35 @@ function addCard(element, isDaily, isSearchHistory){
 function autoFill(){
     $('.searchTermBox').html('');
     const currentEntry = $('.searchBox').val();
-    const requestUrl = geoApiUrl + currentEntry + '&limit=' + geoResultLimit + '&appid=' + openWeatherAPIKey;
-    const request = new Request(requestUrl, {
-        method: 'GET',
-    });
-    fetch(request)
-    .then(response => {
-        if(response.ok){
-            response.json()
-                .then((data)=>{
-                    const fetchData = [];
-                    data.forEach(element => {
-                        fetchData.push({
-                            name: element.name, 
-                            lat: element.lat,
-                            lon: element.lon,
-                            state: (element.state) ? element.state + ', USA' : element.country
+    if (currentEntry) {
+        const requestUrl = geoApiUrl + currentEntry + '&limit=' + geoResultLimit + '&appid=' + openWeatherAPIKey;
+        const request = new Request(requestUrl, {
+            method: 'GET',
+        });
+        fetch(request)
+        .then(response => {
+            if(response.ok){
+                response.json()
+                    .then((data)=>{
+                        const fetchData = [];
+                        data.forEach(element => {
+                            fetchData.push({
+                                name: element.name, 
+                                lat: element.lat,
+                                lon: element.lon,
+                                state: (element.state) ? element.state + ', USA' : element.country
+                            });
                         });
-                    });
-                    populateAutoFill(fetchData);
-                }
-            );
-        } else {
-            console.log('Problem!');
-            console.log('response.status', response.status);
-            console.log('response.statusText', response.statusText);
-        }
-    });
+                        populateAutoFill(fetchData);
+                    }
+                );
+            } else {
+                console.log('Problem!');
+                console.log('response.status', response.status);
+                console.log('response.statusText', response.statusText);
+            }
+        });
+    }
 }
 
 function populateAutoFill(fetchData){
