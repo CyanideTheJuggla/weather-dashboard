@@ -45,7 +45,7 @@ const clock = () => {
 }
 
 function geoApi_GetLocation(location, isSearchHistory) {
-    let temp = $('.searchBox').val();
+    let temp = $('#searchCity').val();
     temp = ((location!= null && location != '') ? 
             location : ((temp != null && temp != '') ? 
                 temp : 
@@ -77,7 +77,7 @@ function geoApi_GetLocation(location, isSearchHistory) {
             showError(err)
         }
         
-    } else console.log('Problem!: (locationString.length > 0 ): ', (locationString.length > 0 ));
+    } else showError('Please enter a city to search');
 }
 
 function storePreviousSearch(card, isSearchHistory, elementName){
@@ -91,15 +91,15 @@ function storePreviousSearch(card, isSearchHistory, elementName){
     card.appendChild(searchButton);
 
     if($('.searchHistory .card[data-string="' + elementName + '"]').length > 0) {
-        console.log('selection: ' + elementName);
-        console.log($('.searchHistory .card[data-string="' + elementName + '"]:not(:only-child)'));
+        //console.log('selection: ' + elementName);
+        //console.log($('.searchHistory .card[data-string="' + elementName + '"]:not(:only-child)'));
         $('.searchHistory .card[data-string="' + elementName + '"]:not(:only-child)').remove();
     }
 
     $('.searchHistory').prepend(card);
     if ($('.searchHistory').children().length > 5) $('.searchHistory .card:last-child').remove();
     const selector = '.searchHistory .card[data-string="' + elementName + '"] h6';
-    console.log(elementName);
+    //console.log(elementName);
     $(selector).text(elementName);
     if(!isSearchHistory){
         storage = JSON.parse(localStorage.getItem('pastSearches'));
@@ -124,7 +124,7 @@ function oneCall_GetWeather(locationData, isSearchHistory) {
             if(response.ok){
                 response.json()
                 .then(data=>{
-                    console.log(locationData);
+                    //console.log(locationData);
                     const weatherData = {
                         name: locationData.name,
                         daily: data.daily, 
@@ -138,7 +138,7 @@ function oneCall_GetWeather(locationData, isSearchHistory) {
 
 function populateData(weatherData, isSearchHistory) {
     $('.card-group').html('');
-    console.log(weatherData);
+    //console.log(weatherData);
     const current = {
         name: weatherData.name,
         date: luxon.DateTime.now().toLocaleString(),
@@ -271,7 +271,7 @@ function addCard(element, isDaily, isSearchHistory){
     
     if (isSearchHistory && !isDaily) {
         //console.log('isSearchHistory | !isDaily: ' + isSearchHistory + " | " + isDaily );
-        console.log(element.name);
+        //console.log(element.name);
         storePreviousSearch(cardClone, true, element.name);
     }
 
@@ -279,7 +279,7 @@ function addCard(element, isDaily, isSearchHistory){
 
 function autoFill(){
     $('.searchTermBox').html('');
-    const currentEntry = $('.searchBox').val();
+    const currentEntry = $('#searchCity').val();
     if (currentEntry) {
         const requestUrl = geoApiUrl + currentEntry + '&limit=' + geoResultLimit + '&appid=' + openWeatherAPIKey;
         const request = new Request(requestUrl, {
@@ -290,7 +290,7 @@ function autoFill(){
             if(response.ok){
                 response.json()
                     .then((data)=>{
-                        console.log(data.state);
+                        //console.log(data.state);
                         const fetchData = [];
                         data.forEach(element => {
                             fetchData.push({
@@ -339,21 +339,32 @@ function citySearchInput(event) {
 
 function autoSearch(event) {
     locationString = $(event.target).html();
-    $('#searchCity').val($(event.target).html())
-    console.log(locationString);
-    const locDat = {
-        name: locationString,
-        lat: event.target.dataset.lat,
-        lon: event.target.dataset.lon
+    if (event.target.id == 'searchMain' && $('.searchTermBox').children().length > 0) {
+        locationString = (
+            $('#searchCity').val() ? 
+                $('#searchCity').val() :
+                ''
+            );
+        $('.searchTermBox').children()[0].click();
     }
-    oneCall_GetWeather(locDat);
-    $('.searchTermBox').html('').blur();
+    $('#searchCity').val(locationString);
+    
+    console.log(locationString);
+    if (locationString) {
+        const locDat = {
+            name: locationString,
+            lat: event.target.dataset.lat,
+            lon: event.target.dataset.lon
+        }
+        oneCall_GetWeather(locDat);
+        $('.searchTermBox').html('').blur();
+    }
 }
 
 function reSearch(e){
-    console.log(e.target);
+    //console.log(e.target);
     locationString = e.target.dataset.string;
-    console.log('locationString', locationString);
+    //console.log('locationString', locationString);
     geoApi_GetLocation(locationString, false);
 }
 
