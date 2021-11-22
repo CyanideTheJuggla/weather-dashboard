@@ -15,9 +15,15 @@ body {
   transition: height 300ms ease;
   height: 0px;
 }
+.closed .card {
+  display: none;
+}
 .open {
   transition: height 300ms ease;
   height: 600px;
+}
+.open .card {
+  display: block !important;
 }
 
 .font-30 {
@@ -30,4 +36,10 @@ body {
 .navFooter {
   width: 100vw;
   font-size: x-small;
+}
+.searchTermBox {
+  z-index: 1000;
+}
+.searchOpt:hover {
+  background-color: var(--bs-info);
 }

@@ -17,12 +17,12 @@
   <body class="bg-info bg-gradient">
     <div class="row navBar position-fixed bg-primary">
       <div class="col-1 d-flex justify-content-center align-items-center">
-        <span class="material-icons-two-tone text-light font-30 d-block menu menuOpen">
+        <!--span class="material-icons-two-tone text-light font-30 d-block menu menuOpen">
           menu
         </span>
         <span class="material-icons-two-tone text-light font-30 d-none menu menuClose">
           menu_open
-        </span>
+        </span-->
       </div>
       <div class="col-9 ">
 
@@ -34,32 +34,28 @@
         <span id="currentTime" class="text-light"></span>
       </div>
     </div>
-    <div class="row col-3 position-absolute navMenu closed bg-primary bg-gradient">
-    
-    </div>
     <div class="container bg-light" style="min-height: 100vh;">
       
       <div class="row mt-4 mb-5"></div>
       <div class="row">
         <div class="col-3 leftSec" style="min-height: 900px;">
-          <form class="form-floating">
-            <input type="text" class="form-control searchBox" placeholder="Enter City Name" >
-            <label for="floatingInput">City Name</label>
-          </form>
+          <input type="text" class="form-control searchBox" placeholder="Enter City Name" id="searchCity">  
+          <div class="card position-absolute">
+            <ul class="list-group list-group-flush border-secondary shadow searchTermBox"></ul>
+          </div>
+          <button class="btn btn-primary btn-lg testLaunch my-3" id='testLaunch' style="width: 100%;" data-source='mainSource'>Search</button>
+          <div class="col-3 bg-light bg-gradient border border-1 d-flex flex-column justify-content-center searchHistory" style="width: auto; min-height: 20%;">
+          
+          </div>
         </div>
         <div class="col-9 mainSec" style="min-height: 100px;">
           <div class="row">
-              <h1 class="display-3">Jumbo heading</h1>
-              <p class="lead">Jumbo helper text</p>
-              <hr class="my-2">
-              <p>More info</p>
-              
-              <button class="btn btn-primary btn-lg float-end testLaunch" id='testLaunch' style="width: 400px; float: right;" onclick='geoApi_GetLocation'>Test Ajax</button>
-              
+              <h3 class="display-3 cityName">Search a city to continue</h1>
+              <p class="lead"></p>
           </div>
           <div class="row forecastList">
             <h5>5-day Forecast</h1><br/>
-            <div class="card-group"></div>
+            <div class="card-group daily"></div>
             
             
           </div>

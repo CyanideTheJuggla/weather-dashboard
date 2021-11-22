@@ -4,7 +4,9 @@ const oneCallApiUrl = 'https://api.openweathermap.org/data/2.5/onecall?';
 const units = 'imperial';
 const geoResultLimit = 5;
 
+let locationString = '';
 let fetchData;
+let charactersEntered = 0;
 let time;
 
 const toggleMenuState = () => {
@@ -22,72 +24,132 @@ const toggleMenuState = () => {
     
 }
 
-const clock = () => {
-    const currentTime = new Date().toLocaleTimeString();
-    $('#currentTime').html(new Date().toLocaleTimeString());
+function directionFromDegrees (degrees)  {
+    degrees = Number.parseFloat(degrees);
+    console.log(degrees);
+    if (degrees >= 0 && degrees <= 20) return 'N';
+    if (degrees > 20 && degrees <= 70) return 'NE';
+    if (degrees > 70 && degrees <= 110) return 'E';
+    if (degrees > 110 && degrees <= 160) return 'SE';
+    if (degrees > 160 && degrees <= 200) return 'S';
+    if (degrees > 200 && degrees <= 270) return 'SW';
+    if (degrees > 290 && degrees <= 340)  return 'W';
+    if (degrees > 290 && degrees <= 340)  return 'NW';
+    if (degrees > 340 && degrees <= 360)  return 'N';
 }
 
-function geoApi_GetLocation() {
-    const locationString = ( $('.searchBox').val().length > 0 ) ? $('.searchBox').val() : 'Tampa';
-    const requestUrl = geoApiUrl + locationString + '&limit=' + geoResultLimit + '&appid=' + openWeatherAPIKey;
-    const request = new Request(requestUrl, {
-        method: 'GET',
-    });
-    //console.log(requestUrl);
-    //console.log(request);
-    fetch(request)
-    .then(response => {
-        response.json()
-            .then((data)=>{
-                fetchData =  {
-                    name: data[0].name, 
-                    lat: data[0].lat,
-                    lon: data[0].lon,
-                    country: data[0].country 
-                };
-                oneCall_GetWeather(fetchData, '');
-            });
-    });
+const clock = () => {
+    const currentTime = new Date().toLocaleTimeString();
+    $('#currentTime').html(currentTime);
 }
-function oneCall_GetWeather(locationData, exclude) {
+
+function geoApi_GetLocation(location, isSearchHistory) {
+    console.log(`geoApi_GetLocation("${location}", ${isSearchHistory})`);
+    let temp = $('.searchBox').val();
+    temp = ((temp != null && temp != '') ? temp : ((location.length > 0) ? location : 'ALL BAD'))
+    
+    //console.log(`(temp != null && temp != '') ? temp : (location.length > 0 ? location : ''): `, ((temp != null && temp != '') ? temp : ((location.length > 0) ? location : 'ALL BAD')) );
+    console.log(temp);
+    
+    locationString = (temp.length > 0 ? temp : '');
+    //console.log(locationString);
+    
+    if(locationString.length > 0 ) {
+        const requestUrl = geoApiUrl + locationString + '&limit=' + geoResultLimit + '&appid=' + openWeatherAPIKey;
+        const request = new Request(requestUrl, {
+            method: 'GET',
+        });
+        fetch(request)
+        .then(response => {
+            response.json()
+                .then((data)=>{
+                    console.log(data);
+                    if(data.length > 0){
+                        fetchData =  {
+                            name: data[0].name, 
+                            lat: data[0].lat,
+                            lon: data[0].lon
+                        };
+                        oneCall_GetWeather(fetchData, isSearchHistory);
+                    } else return;
+                });
+        });
+    } else console.log('Problem!: (locationString.length > 0 ): ', (locationString.length > 0 ));
+}
+
+function storePreviousSearch(card, isSearchHistory){
+    card.setAttribute('data-string', locationString);
+    const searchButton = document.createElement('button');
+    searchButton.className = 'btn btn-primary searchButton';
+    searchButton.setAttribute('data-search', 'history');
+    searchButton.setAttribute('data-string', locationString);
+    searchButton.textContent = 'Search again';
+    
+    card.appendChild(searchButton);
+
+    $('.searchHistory').prepend(card);
+    if ($('.searchHistory').children().length > 5) $('.searchHistory .card:last-child').remove();
+    const selector = '.searchHistory .card[data-string="' + locationString + '"] h6';
+    
+    $(selector).text(locationString);
+    if(!isSearchHistory){
+        storage = JSON.parse(localStorage.getItem('pastSearches'));
+        if (storage == undefined || storage == null)  storage = [];
+        storage.push({locationString: locationString})
+        if (storage.length > 5) storage.pop();
+        localStorage.setItem('pastSearches', JSON.stringify(storage));
+    }
+}
+
+function oneCall_GetWeather(locationData, isSearchHistory) {
+    console.log(locationData);
+    charactersEntered = 0;
     const lat = locationData.lat;
     const lon = locationData.lon;
-    const exclusions = (exclude.length > 0) ? exclude : '';
     const requestURL = oneCallApiUrl + 'lat=' + lat + '&lon=' + lon + '&units=' + units + '&appid=' + openWeatherAPIKey;
     const request = new Request(requestURL, {
         method: 'GET',
     });
-    //console.log(requestURL);
-    //console.log(request);
     fetch(request)
         .then(response => {
-            response.json()
+            if(response.ok){
+                response.json()
                 .then(data=>{
-                    console.log(data);
                     const weatherData = {
                         daily: data.daily, 
                         current: data.current
                     };
-                    populateData(weatherData);
+                    populateData(weatherData, isSearchHistory);
                 });
+            }
         });
 }
-function populateData(weatherData) {
+
+function populateData(weatherData, isSearchHistory) {
+    $('.card-group').html('');
     const current = {
+        date: luxon.DateTime.now().toLocaleString(),
         temp: weatherData.current.temp,
-        uv: weatherData.current.uv,
+        uv: weatherData.current.uvi,
         humidity: weatherData.current.humidity,
-        weather: weatherData.current.weather[0].main
+        weather: weatherData.current.weather[0].main,
+        wind: 
+        {
+                deg:   weatherData.current.wind_deg,
+                gust:  weatherData.current.wind_gust,
+                speed: weatherData.current.wind_speed
+        },
+        location: locationString
     };
+    addCard(current, false, isSearchHistory);
     const daily = [];
     for (let i = 0; i < 5; i++) {
         const element = weatherData.daily[i];
-        console.log(element.temp.day);
+        const date = luxon.DateTime.local().plus({days: i + 1});
         const dailyData = {
             temp: element.temp.day,
-            //feelsLike: element.feelsLike.day,
-            date: luxon.DateTime.now(),
-            uv: element.uv,
+            date: date.toLocaleString(),
+            uv: element.uvi,
             humidity: element.humidity,
             weather: element.weather[0].main,
             wind: {
@@ -99,52 +161,192 @@ function populateData(weatherData) {
         daily.push(dailyData);
     }
     daily.forEach(element => {
-
-        console.log(element.attributes)
-        $('.card-group').html(element.toString());
+        addCard(element, true, isSearchHistory);
     });
-    //console.log('current', current);
-    //console.log('daily', daily);
     
+}
+
+function addCard(element, isDaily, isSearchHistory){
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'card';
+
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'card-body';
+
+    const cardTitle = document.createElement('h6');
+    cardTitle.className = 'card-title';
+    cardTitle.textContent = (element.date == luxon.DateTime.now().toLocaleString()) ? "Now: " + element.date + ' - ' + $('#currentTime').html() : element.date;
+    
+    const containmentP = document.createElement('p');
+    containmentP.className = 'card-text';
+    
+    const weatherP = document.createElement('p');
+    const weatherIcon = document.createElement('img');
+    const weatherText = document.createElement('span');
+    weatherIcon.setAttribute('src', 'https://img.icons8.com/material-two-tone/24/000000/partly-cloudy-day--v1.png');
+    weatherText.textContent = element.weather;
+
+    const tempP = document.createElement('p');
+    const tempIcon = document.createElement('img');
+    const tempText = document.createElement('span');
+    tempIcon.setAttribute('src', 'https://img.icons8.com/material-two-tone/24/000000/thermometer.png');
+    tempText.textContent = element.temp + 'ºF';
+
+    const windP = document.createElement('p');
+    const windIcon = document.createElement('img');
+    const windText = document.createElement('span');
+    const windString = element.wind.speed + ' Mph ' + directionFromDegrees(element.wind.deg) ;
+    windIcon.setAttribute('src', 'https://img.icons8.com/material-two-tone/24/000000/wind-gauge.png');
+    windText.textContent = windString;
+
+    const humidityP = document.createElement('p');
+    const humidityIcon = document.createElement('img');
+    const humidityText = document.createElement('span');
+    humidityIcon.setAttribute('src', 'https://img.icons8.com/material-two-tone/24/000000/humidity.png');
+    humidityText.textContent = element.humidity;
+
+    const uvP = document.createElement('p');
+    const uvIcon = document.createElement('img');
+    const uvText = document.createElement('span');
+    uvIcon.setAttribute('src', 'https://img.icons8.com/external-justicon-lineal-justicon/64/000000/external-uv-index-weather-justicon-lineal-justicon-1.png');
+    uvIcon.setAttribute('style', 'width: 24px; height: 24px');
+    uvText.textContent = element.uv;
+
+    weatherP.appendChild(weatherIcon);
+    weatherP.appendChild(weatherText);
+    
+    tempP.appendChild(tempIcon);
+    tempP.appendChild(tempText);
+    
+    windP.appendChild(windIcon);
+    windP.appendChild(windText);
+    
+    humidityP.appendChild(humidityIcon);
+    humidityP.appendChild(humidityText);
+
+    uvP.appendChild(uvIcon);
+    uvP.appendChild(uvText);
+
+    containmentP.appendChild(weatherP);
+    containmentP.appendChild(tempP);
+    containmentP.appendChild(windP);
+    containmentP.appendChild(humidityP);
+    containmentP.appendChild(uvP);
+    
+    bodyDiv.appendChild(cardTitle);
+    bodyDiv.appendChild(containmentP);
+    
+    cardDiv.appendChild(bodyDiv);
+    const cardClone = cardDiv.cloneNode(true);
+    
+    if(isDaily && !isSearchHistory) {
+        $('.daily').append(cardDiv);
+    }
+    
+    if(!isDaily && !isSearchHistory) {
+        $('.lead').html(cardDiv);
+        $('.cityName').text(locationString)
+        
+        storePreviousSearch(cardClone, false);
+    }
+    
+    if (isSearchHistory && !isDaily) {
+        storePreviousSearch(cardClone, true);
+    }
+
+}
+
+function autoFill(){
+    $('.searchTermBox').html('');
+    const currentEntry = $('.searchBox').val();
+    const requestUrl = geoApiUrl + currentEntry + '&limit=' + geoResultLimit + '&appid=' + openWeatherAPIKey;
+    const request = new Request(requestUrl, {
+        method: 'GET',
+    });
+    fetch(request)
+    .then(response => {
+        if(response.ok){
+            response.json()
+                .then((data)=>{
+                    const fetchData = [];
+                    data.forEach(element => {
+                        fetchData.push({
+                            name: element.name, 
+                            lat: element.lat,
+                            lon: element.lon,
+                            state: (element.state) ? element.state + ', USA' : element.country
+                        });
+                    });
+                    populateAutoFill(fetchData);
+                }
+            );
+        } else {
+            console.log('Problem!');
+            console.log('response.status', response.status);
+            console.log('response.statusText', response.statusText);
+        }
+    });
+}
+
+function populateAutoFill(fetchData){
+    for (let i = 0; i < fetchData.length; i++) {
+        const element = fetchData[i];
+        const fillData = document.createElement('li');
+        fillData.textContent = element.name + ', ' + element.state;
+        fillData.className = 'list-group-item searchOpt';
+        fillData.setAttribute('data-lat', element.lat);
+        fillData.setAttribute('data-lon', element.lon)
+        $('.searchTermBox').append(fillData);
+        
+    }
+}
+
+function citySearchInput(event) {
+    if(event.keyCode == 13) {
+        if($(event.target).val().length > 3 && $('.searchTermBox').children().length > 0){
+            $('.searchTermBox').children()[0].click();
+        }
+    }
+    else if(!(event.altKey || event.ctrlKey || event.shiftKey) & $(event.target).val().length > 3){
+        autoFill();
+    } else if(event.ctrlKey) autoFill();
+}
+
+function autoSearch(event) {
+    locationString = $(event.target).html();
+    $('#searchCity').val($(event.target).html())
+    const locDat = {
+        lat: event.target.dataset.lat,
+        lon: event.target.dataset.lon
+    }
+    oneCall_GetWeather(locDat);
+    $('.searchTermBox').html('').blur();
+}
+
+function loadStored(){
+    storageObj = JSON.parse(localStorage.getItem('pastSearches'));
+    console.log(storageObj);
+    if (storageObj != null) {
+        for (let i = 0; i < storageObj.length; i++) {
+            const element = storageObj[i];
+            if(element.locationString.length > 0){
+                locationString = element.locationString;
+                geoApi_GetLocation(element.locationString, true);
+            }
+        }
+    } else return;
 }
 
 $(document).ready(()=>{
     $('.menu').click(toggleMenuState);
     $('#currentTime').html(new Date().toLocaleTimeString());
     time = setInterval(clock, 1000);
+    loadStored();
     
-    //
 });
+
 $('#testLaunch').click(geoApi_GetLocation);
-//.click(geoApi_GetLocation);//geoApi_GetLocation('Tampa');
-//console.log()
-
-
-/*
-
-
-    <div class="card" data-day="1">
-        <div class="card-body">
-            <h6 class="card-title">Date</h6>
-            <p class="card-text">
-                <p>
-                    <img class="weatherIcon" src="https://img.icons8.com/material-two-tone/24/000000/partly-cloudy-day--v1.png">
-                    <span class="weatherText">Weather</span>
-                </p>
-                <p>
-                    <img class="weatherTempIcon" src="https://img.icons8.com/material-two-tone/24/000000/thermometer.png">
-                    <span class="weatherTemp">Temp</span>
-                </p>
-                <p>
-                    <img class="weatherWindIcon" src="https://img.icons8.com/material-two-tone/24/000000/wind-gauge.png"/>
-                    <span class="weatherWind">Wind</span>
-                </p>
-                <p>
-                    <img class="weatherHumidityIcon" src="https://img.icons8.com/material-two-tone/24/000000/humidity.png"/>
-                    <span class="weatherHumidity">Humidity</span>
-                </p>
-            </p>
-        </div>
-    </div>
-
-*/
+$('.card-body .searchButton').click(geoApi_GetLocation);
+$('#searchCity').on('keyup', citySearchInput);
+$('#searchCity').on('blur', ()=> { setTimeout(() => { $('.searchTermBox').html(''); }, 500) });
+$('ul.searchTermBox').on('click', 'li.searchOpt', autoSearch);
