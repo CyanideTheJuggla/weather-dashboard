@@ -1,6 +1,6 @@
 
-deployment: https://cyanidethejuggla.github.io/weather-dashboard/
-code: https://github.com/CyanideTheJuggla/weather-dashboard/
+deployment: https://cyanidethejuggla.github.io/weather-dashboard/ <br>
+code: https://github.com/CyanideTheJuggla/weather-dashboard/ <br>
 screenshot: not available, I quit this assignment. 
 
 Readme: have the one provided to me with the assignment. There's nothing more I can write to make a better one, so enjoy.
