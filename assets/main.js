@@ -44,12 +44,12 @@ const clock = () => {
 }
 
 function geoApi_GetLocation(location, isSearchHistory) {
-    console.log(`geoApi_GetLocation("${location}", ${isSearchHistory})`);
+    //console.log(`geoApi_GetLocation("${location}", ${isSearchHistory})`);
     let temp = $('.searchBox').val();
     temp = ((temp != null && temp != '') ? temp : ((location.length > 0) ? location : 'ALL BAD'))
     
     //console.log(`(temp != null && temp != '') ? temp : (location.length > 0 ? location : ''): `, ((temp != null && temp != '') ? temp : ((location.length > 0) ? location : 'ALL BAD')) );
-    console.log(temp);
+    console.log('temp', temp);
     
     locationString = (temp.length > 0 ? temp : '');
     //console.log(locationString);
