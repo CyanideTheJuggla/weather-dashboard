@@ -45,16 +45,13 @@ const clock = () => {
 }
 
 function geoApi_GetLocation(location, isSearchHistory) {
-    //console.log(`geoApi_GetLocation("${location}", ${isSearchHistory})`);
     let temp = $('.searchBox').val();
-    temp = ((temp != null && temp != '') ? temp : ((location.length > 0) ? location : 'ALL BAD'))
-    
-    //console.log(`(temp != null && temp != '') ? temp : (location.length > 0 ? location : ''): `, ((temp != null && temp != '') ? temp : ((location.length > 0) ? location : 'ALL BAD')) );
-    //console.log('temp', temp);
-    
-    locationString = (temp.length > 0 ? temp : '');
-    //console.log(locationString);
-    
+    temp = ((location!= null && location != '') ? 
+            location : ((temp != null && temp != '') ? 
+                temp : 
+                'ALL BAD'
+            )
+        );
     if(locationString.length > 0 ) {
         const requestUrl = geoApiUrl + locationString + '&limit=' + geoResultLimit + '&appid=' + openWeatherAPIKey;
         const request = new Request(requestUrl, {
@@ -83,28 +80,31 @@ function geoApi_GetLocation(location, isSearchHistory) {
     } else console.log('Problem!: (locationString.length > 0 ): ', (locationString.length > 0 ));
 }
 
-function storePreviousSearch(card, isSearchHistory){
-    card.setAttribute('data-string', locationString);
+function storePreviousSearch(card, isSearchHistory, elementName){
+    card.setAttribute('data-string', elementName);
     const searchButton = document.createElement('button');
     searchButton.className = 'btn btn-primary searchButton';
     searchButton.setAttribute('data-search', 'history');
-    searchButton.setAttribute('data-string', locationString);
+    searchButton.setAttribute('data-string', elementName);
     searchButton.textContent = 'Search again';
     
     card.appendChild(searchButton);
-    if($('.searchHistory .card[data-string="' + locationString + '"]').length > 0) {
-        $('.searchHistory .card[data-string="' + locationString + '"]').remove();
+
+    if($('.searchHistory .card[data-string="' + elementName + '"]').length > 0) {
+        console.log('selection: ' + elementName);
+        console.log($('.searchHistory .card[data-string="' + elementName + '"]:not(:only-child)'));
+        $('.searchHistory .card[data-string="' + elementName + '"]:not(:only-child)').remove();
     }
 
     $('.searchHistory').prepend(card);
     if ($('.searchHistory').children().length > 5) $('.searchHistory .card:last-child').remove();
-    const selector = '.searchHistory .card[data-string="' + locationString + '"] h6';
-    
-    $(selector).text(locationString);
+    const selector = '.searchHistory .card[data-string="' + elementName + '"] h6';
+    console.log(elementName);
+    $(selector).text(elementName);
     if(!isSearchHistory){
         storage = JSON.parse(localStorage.getItem('pastSearches'));
         if (storage == undefined || storage == null)  storage = [];
-        storage.push({locationString: locationString})
+        storage.push({locationString: elementName})
         if (storage.length > 5) storage.pop();
         localStorage.setItem('pastSearches', JSON.stringify(storage));
     }
@@ -124,7 +124,9 @@ function oneCall_GetWeather(locationData, isSearchHistory) {
             if(response.ok){
                 response.json()
                 .then(data=>{
+                    console.log(locationData);
                     const weatherData = {
+                        name: locationData.name,
                         daily: data.daily, 
                         current: data.current
                     };
@@ -136,7 +138,9 @@ function oneCall_GetWeather(locationData, isSearchHistory) {
 
 function populateData(weatherData, isSearchHistory) {
     $('.card-group').html('');
+    console.log(weatherData);
     const current = {
+        name: weatherData.name,
         date: luxon.DateTime.now().toLocaleString(),
         temp: weatherData.current.temp,
         uv: weatherData.current.uvi,
@@ -156,6 +160,7 @@ function populateData(weatherData, isSearchHistory) {
         const element = weatherData.daily[i];
         const date = luxon.DateTime.local().plus({days: i + 1});
         const dailyData = {
+            name: weatherData.name,
             temp: element.temp.day,
             date: date.toLocaleString(),
             uv: element.uvi,
@@ -169,10 +174,11 @@ function populateData(weatherData, isSearchHistory) {
         };
         daily.push(dailyData);
     }
-    daily.forEach(element => {
-        addCard(element, true, isSearchHistory);
-    });
-    
+    if(!isSearchHistory){
+        daily.forEach(element => {
+            addCard(element, true, false);
+        });
+    }
 }
 
 function addCard(element, isDaily, isSearchHistory){
@@ -259,13 +265,14 @@ function addCard(element, isDaily, isSearchHistory){
     
     if(!isDaily && !isSearchHistory) {
         $('.lead').html(cardDiv);
-        $('.cityName').text(locationString)
-        
-        storePreviousSearch(cardClone, false);
+        $('.cityName').text(element.name);
+        storePreviousSearch(cardClone, false, element.name);
     }
     
     if (isSearchHistory && !isDaily) {
-        storePreviousSearch(cardClone, true);
+        //console.log('isSearchHistory | !isDaily: ' + isSearchHistory + " | " + isDaily );
+        console.log(element.name);
+        storePreviousSearch(cardClone, true, element.name);
     }
 
 }
@@ -283,6 +290,7 @@ function autoFill(){
             if(response.ok){
                 response.json()
                     .then((data)=>{
+                        console.log(data.state);
                         const fetchData = [];
                         data.forEach(element => {
                             fetchData.push({
@@ -299,6 +307,7 @@ function autoFill(){
                 //console.log('Problem!');
                 //console.log('response.status', response.status);
                 //console.log('response.statusText', response.statusText);
+                showError(response.statusText);
             }
         });
     }
@@ -331,12 +340,21 @@ function citySearchInput(event) {
 function autoSearch(event) {
     locationString = $(event.target).html();
     $('#searchCity').val($(event.target).html())
+    console.log(locationString);
     const locDat = {
+        name: locationString,
         lat: event.target.dataset.lat,
         lon: event.target.dataset.lon
     }
     oneCall_GetWeather(locDat);
     $('.searchTermBox').html('').blur();
+}
+
+function reSearch(e){
+    console.log(e.target);
+    locationString = e.target.dataset.string;
+    console.log('locationString', locationString);
+    geoApi_GetLocation(locationString, false);
 }
 
 function loadStored(){
@@ -345,7 +363,7 @@ function loadStored(){
     if (storageObj != null) {
         for (let i = 0; i < storageObj.length; i++) {
             const element = storageObj[i];
-            if(element.locationString.length > 0){
+            if(element.locationString){
                 locationString = element.locationString;
                 geoApi_GetLocation(element.locationString, true);
             }
@@ -354,15 +372,14 @@ function loadStored(){
 }
 
 $(document).ready(()=>{
-    $('.menu').click(toggleMenuState);
+    //$('.menu').click(toggleMenuState);
+    $('#searchMain').click(autoSearch);
+    $('#searchCity').on('keyup', citySearchInput);
+    $('#searchCity').on('blur', ()=> { setTimeout(() => { $('.searchTermBox').html(''); }, 500) });
+    $('.searchHistory').on('click', 'button.searchButton', reSearch);
+    $('ul.searchTermBox').on('click', 'li.searchOpt', autoSearch);
     $('#currentTime').html(new Date().toLocaleTimeString());
     time = setInterval(clock, 1000);
     loadStored();
-    
 });
 
-$('#testLaunch').click(geoApi_GetLocation);
-$('.card-body .searchButton').click(geoApi_GetLocation);
-$('#searchCity').on('keyup', citySearchInput);
-$('#searchCity').on('blur', ()=> { setTimeout(() => { $('.searchTermBox').html(''); }, 500) });
-$('ul.searchTermBox').on('click', 'li.searchOpt', autoSearch);

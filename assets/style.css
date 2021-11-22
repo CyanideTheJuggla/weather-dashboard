@@ -43,3 +43,8 @@ body {
 .searchOpt:hover {
   background-color: var(--bs-info);
 }
+/*
+.row:not(:only-child) {
+  background-color: yellow;
+}
+*/
